@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlashMind">
+<meta name="theme-color" content="#0a0a0d">
+<title>FlashMind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0d;--surface:#131318;--surface2:#1a1a22;--surface3:#22222e;--surface4:#2a2a38;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --accent:#7c6af7;--aglow:rgba(124,106,247,0.22);--accent2:#e879a0;--accent3:#38d9c0;
+  --text:#eeeef5;--text2:#7878a0;--text3:#44445a;
+  --easy:#4ade9a;--hard:#f5a623;--again:#f45c5c;
+  --r:18px;--rs:12px;--rx:8px;--sh:0 8px 40px rgba(0,0,0,0.55);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.5;overscroll-behavior:none;}
+body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.55;}
+h1,h2,h3{font-family:'Syne',sans-serif;}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;position:absolute;inset:0;padding-bottom:env(safe-area-inset-bottom);}
+.screen.active{display:flex;}
+.scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 18px 120px;max-width:640px;margin:0 auto;width:100%;}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 13px;background:rgba(10,10,13,0.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;}
+.app-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.4px;background:linear-gradient(130deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.btn-icon{width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:all 0.18s;flex-shrink:0;}
+.btn-icon:hover{background:var(--surface3);transform:scale(1.06);}
+.btn-icon:active{transform:scale(0.92);}
+.btn-back{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;padding:6px 0;transition:color 0.18s;white-space:nowrap;}
+.btn-back:hover{color:var(--text);}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(19,19,24,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:10px 0 8px;color:var(--text3);font-size:10px;font-family:'DM Sans',sans-serif;font-weight:500;letter-spacing:0.4px;border:none;background:none;transition:color 0.2s;text-transform:uppercase;}
+.nav-icon{font-size:21px;transition:transform 0.2s;}
+.nav-item.active{color:var(--accent);}
+.nav-item.active .nav-icon{transform:scale(1.13);}
+.fab{position:fixed;bottom:80px;right:18px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 24px var(--aglow);transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);z-index:90;}
+.fab:hover{transform:scale(1.12) rotate(90deg);box-shadow:0 10px 36px rgba(124,106,247,0.5);}
+.fab:active{transform:scale(0.93);}
+.section-title{font-size:22px;font-weight:800;letter-spacing:-0.4px;margin-bottom:4px;}
+.section-sub{color:var(--text2);font-size:13px;margin-bottom:18px;}
+.folder-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.folder-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 15px 15px;cursor:pointer;transition:all 0.22s;position:relative;overflow:hidden;}
+.folder-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--aglow),transparent);opacity:0;transition:opacity 0.22s;border-radius:inherit;}
+.folder-card:hover{transform:translateY(-2px);border-color:rgba(124,106,247,0.28);}
+.folder-card:hover::after{opacity:1;}
+.folder-card:active{transform:scale(0.97);}
+.folder-emoji{font-size:30px;margin-bottom:10px;display:block;}
+.folder-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px;line-height:1.3;}
+.folder-meta{color:var(--text2);font-size:11px;}
+.folder-due-dot{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 7px var(--accent);}
+.deck-list{display:flex;flex-direction:column;gap:9px;}
+.deck-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:13px;}
+.deck-item:hover{background:var(--surface2);border-color:rgba(124,106,247,0.22);transform:translateX(2px);}
+.deck-item:active{transform:scale(0.98);}
+.deck-icon{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.deck-info{flex:1;min-width:0;}
+.deck-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.deck-meta{color:var(--text2);font-size:12px;}
+.due-pill{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;font-family:'Syne',sans-serif;flex-shrink:0;}
+.empty-state{text-align:center;padding:56px 20px;color:var(--text2);}
+.empty-icon{font-size:50px;margin-bottom:14px;opacity:0.45;}
+.empty-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--text);margin-bottom:7px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+.due-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(124,106,247,0.13),rgba(56,217,192,0.07));border:1px solid rgba(124,106,247,0.22);border-radius:var(--rs);padding:13px 15px;margin-bottom:18px;cursor:pointer;transition:all 0.2s;}
+.due-banner:hover{border-color:rgba(124,106,247,0.45);}
+.dbi{font-size:22px;}.dbt{flex:1;}.dbt-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;}.dbt-sub{color:var(--text2);font-size:12px;margin-top:1px;}.dba{color:var(--text2);font-size:18px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--surface);border-radius:24px 24px 0 0;padding:20px 20px max(22px,env(safe-area-inset-bottom));width:100%;max-width:620px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideUp 0.3s cubic-bezier(0.34,1.2,0.64,1);border:1px solid var(--border2);border-bottom:none;}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-handle{width:36px;height:4px;background:var(--surface4);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:18px;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.9px;margin-bottom:7px;}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:12px 13px;outline:none;transition:border-color 0.18s;resize:vertical;}
+.form-input:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--text3);}
+textarea.form-input{min-height:100px;}
+.btn{border:none;border-radius:var(--rs);padding:13px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all 0.18s;letter-spacing:0.2px;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;width:100%;box-shadow:0 4px 18px var(--aglow);}
+.btn-primary:hover{box-shadow:0 6px 28px rgba(124,106,247,0.5);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);width:100%;}
+.btn-secondary:hover{background:var(--surface3);}
+.btn-row{display:flex;gap:9px;margin-top:6px;}
+.btn-row .btn{flex:1;}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:var(--rx);border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all 0.15s;}
+.btn-sm:active{transform:scale(0.93);}
+.btn-edit{background:var(--surface3);color:var(--text2);}
+.btn-edit:hover{background:var(--accent);color:#fff;}
+.btn-del{background:rgba(244,92,92,0.12);color:var(--again);}
+.btn-del:hover{background:rgba(244,92,92,0.25);}
+.cards-list{display:flex;flex-direction:column;gap:9px;}
+.card-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;transition:background 0.18s;}
+.card-item:hover{background:var(--surface2);}
+.card-q{font-weight:500;font-size:14px;margin-bottom:7px;}
+.card-div{height:1px;background:var(--border);margin:0 0 7px;}
+.card-a{color:var(--text2);font-size:13px;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:11px;}
+.card-actions{display:flex;gap:6px;}
+.tag{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:0.4px;}
+.tag-new{background:rgba(124,106,247,0.15);color:var(--accent);}
+.tag-due{background:rgba(244,92,92,0.15);color:var(--again);}
+.tag-ok{background:rgba(74,222,154,0.12);color:var(--easy);}
+.emoji-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px;}
+.emoji-opt{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:21px;border-radius:10px;cursor:pointer;background:var(--surface2);border:2px solid transparent;transition:all 0.15s;}
+.emoji-opt.selected{border-color:var(--accent);background:var(--surface3);}
+.chip-select{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px;}
+.chip{padding:6px 13px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.18s;}
+.chip:hover{background:var(--surface3);}
+.chip.selected{background:rgba(124,106,247,0.18);border-color:var(--accent);color:var(--accent);}
+.import-preview{margin-top:14px;}
+.imp-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text2);margin-bottom:9px;display:flex;align-items:center;gap:7px;}
+.imp-badge{background:var(--accent);color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;}
+.imp-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px;font-size:13px;border-left:3px solid var(--accent);}
+.imp-q{color:var(--text);margin-bottom:3px;}
+.imp-a{color:var(--accent3);}
+.imp-warn{background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.28);border-radius:var(--rx);padding:10px 12px;font-size:12px;color:var(--hard);margin-top:10px;}
+#study-screen{background:var(--bg);padding-bottom:0;}
+.study-header{display:flex;align-items:center;padding:14px 18px 12px;background:rgba(10,10,13,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-shrink:0;gap:14px;}
+.sph-wrap{flex:1;}.sph-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.sph-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:2px;transition:width 0.45s ease;}
+.sph-count{font-family:'Syne',sans-serif;font-size:11px;color:var(--text2);text-align:center;margin-top:4px;}
+.card-area{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 18px 12px;perspective:1400px;}
+.card-3d{width:100%;max-width:480px;height:295px;position:relative;transform-style:preserve-3d;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);cursor:pointer;user-select:none;-webkit-user-select:none;}
+.card-3d.flipped{transform:rotateY(180deg);}
+@keyframes swL{to{transform:translateX(-130%) rotate(-14deg);opacity:0;}}
+@keyframes swR{to{transform:translateX(130%) rotate(14deg);opacity:0;}}
+.swL{animation:swL 0.32s ease forwards;}
+.swR{animation:swR 0.32s ease forwards;}
+.card-face{position:absolute;inset:0;border-radius:22px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid var(--border2);box-shadow:var(--sh);}
+.card-front{background:var(--surface);}
+.card-back{background:linear-gradient(145deg,#14142a,#0f1f2a);transform:rotateY(180deg);border-color:rgba(124,106,247,0.2);}
+.c-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;font-family:'Syne',sans-serif;}
+.card-back .c-label{color:var(--accent3);}
+.c-text{font-size:17px;font-weight:400;line-height:1.65;color:var(--text);word-break:break-word;}
+.c-hint{position:absolute;bottom:15px;color:var(--text3);font-size:11px;display:flex;align-items:center;gap:5px;}
+.ans-btns{padding:0 18px 14px;display:none;gap:8px;flex-direction:column;flex-shrink:0;}
+.ans-btns.show{display:flex;}
+.how{text-align:center;color:var(--text2);font-size:11px;margin-bottom:2px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.8px;}
+.ans-btn{border:none;border-radius:var(--rs);padding:13px 16px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:space-between;}
+.ans-btn:active{transform:scale(0.97);}
+.btag{font-size:11px;font-weight:600;opacity:0.65;}
+.b-again{background:rgba(244,92,92,0.18);color:var(--again);border:1px solid rgba(244,92,92,0.25);}
+.b-again:hover{background:rgba(244,92,92,0.3);}
+.b-hard{background:rgba(245,166,35,0.18);color:var(--hard);border:1px solid rgba(245,166,35,0.25);}
+.b-hard:hover{background:rgba(245,166,35,0.3);}
+.b-easy{background:rgba(74,222,154,0.14);color:var(--easy);border:1px solid rgba(74,222,154,0.2);}
+.b-easy:hover{background:rgba(74,222,154,0.26);}
+.study-complete{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 20px;gap:14px;}
+.cmp-emoji{font-size:68px;}.cmp-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+.cmp-sub{color:var(--text2);font-size:14px;line-height:1.6;max-width:270px;}
+.stats-row{display:flex;gap:10px;width:100%;}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 10px;text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+.stat-label{font-size:10px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.breadcrumb{display:flex;align-items:center;gap:5px;margin-bottom:14px;font-size:12px;color:var(--text2);flex-wrap:wrap;}
+.bc-item{cursor:pointer;transition:color 0.18s;}
+.bc-item:hover{color:var(--accent);}
+.bc-sep{color:var(--text3);}
+.divider{height:1px;background:var(--border);margin:18px 0;}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--surface2);border:1px solid var(--border2);border-radius:30px;padding:9px 18px;font-size:13px;font-weight:500;white-space:nowrap;z-index:1000;opacity:0;transition:all 0.28s cubic-bezier(0.34,1.4,0.64,1);pointer-events:none;max-width:90vw;overflow:hidden;text-overflow:ellipsis;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.streak-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(245,166,35,0.15),rgba(244,92,92,0.1));border:1px solid rgba(245,166,35,0.22);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--hard);font-weight:700;font-family:'Syne',sans-serif;margin-bottom:16px;}
+.prg-ring{display:flex;align-items:center;justify-content:center;margin:16px 0 20px;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp 0.35s ease forwards;}
+select.form-input{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath fill='%23666' d='M0 0l5 7 5-7z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="home-screen" class="screen active">
+  <header class="app-header">
+    <span class="app-logo">FlashMind</span>
+    <button class="btn-icon" onclick="goSearch()">🔍</button>
+  </header>
+  <div class="scroll-body fade-up">
+    <div id="home-due-banner"></div>
+    <div id="home-streak"></div>
+    <div class="section-title">My Library</div>
+    <div class="section-sub" id="home-sub"></div>
+    <div class="folder-grid" id="folder-grid"></div>
+    <div id="home-empty" class="empty-state" style="display:none">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">No folders yet</div>
+      <div class="empty-sub">Tap + to create your first folder</div>
+    </div>
+  </div>
+  <button class="fab" onclick="openModal('folder-modal')">＋</button>
+</div>
+<div id="folder-screen" class="screen">
+  <header class="app-header">
+    <button class="btn-back" onclick="showScreen('home-screen')">‹ Library</button>
+    <span id="folder-screen-title" style="font-family:Syne;font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;"></span>
+    <button class="btn-icon" onclick="deleteCurrentFolder()" style="font-size:15px;">🗑️</button>
+  </header>
+  <div class="scroll-body fade-up">
+    <div class="deck-list" id="deck-list"></div>
+    <div id="folder-empty" class="empty-state" style="display:none">
+      <div class="empty-icon">🃏</div><div class="empty-title">No decks yet</div>
+      <div class="empty-sub">Tap + to add a deck</div>
+    </div>
+  </div>
+  <button class="fab" onclick="openModal('deck-modal')">＋</button>
+</div>
+<div id="deck-screen" class="screen">
+  <header class="app-header">
+    <button class="btn-back" id="deck-back-btn">‹ Back</button>
+    <span id="deck-screen-title" style="font-family:Syne;font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;"></span>
+    <button class="btn-icon" onclick="deleteCurrentDeck()" style="font-size:15px;">🗑️</button>
+  </header>
+  <div class="scroll-body fade-up">
+    <div class="breadcrumb" id="deck-bc"></div>
+    <div id="deck-study-wrap" style="margin-bottom:16px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-family:Syne;font-size:17px;font-weight:800;">Cards <span id="deck-card-count" style="color:var(--text2);font-size:14px;font-weight:600;"></span></div>
+    </div>
+    <div class="cards-list" id="cards-list"></div>
+    <div id="deck-empty" class="empty-state" style="display:none">
+      <div class="empty-icon">✨</div><div class="empty-title">No cards yet</div>
+      <div class="empty-sub">Add cards manually or bulk import your notes</div>
+    </div>
+  </div>
+  <button class="fab" onclick="openAddCardMenu()">＋</button>
+</div>
+<div id="study-screen" class="screen">
+  <div class="study-header">
+    <button class="btn-back" onclick="exitStudy()">✕</button>
+    <div class="sph-wrap">
+      <div class="sph-bar"><div class="sph-fill" id="sph-fill" style="width:0%"></div></div>
+      <div class="sph-count" id="sph-count"></div>
+    </div>
+    <span id="study-deck-lbl" style="font-family:Syne;font-size:12px;font-weight:700;color:var(--text2);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  </div>
+  <div class="card-area" id="card-area">
+    <div class="card-3d" id="study-card" onclick="flipCard()" ontouchstart="ts(event)" ontouchend="te(event)">
+      <div class="card-face card-front">
+        <div class="c-label">QUESTION</div>
+        <div class="c-text" id="study-q"></div>
+        <div class="c-hint">👆 Tap to reveal</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="c-label">ANSWER</div>
+        <div class="c-text" id="study-a"></div>
+      </div>
+    </div>
+  </div>
+  <div class="ans-btns" id="ans-btns">
+    <div class="how">HOW DID IT GO?</div>
+    <button class="ans-btn b-again" onclick="rate('again')"><span>Again</span><span class="btag">&lt;1 min</span></button>
+    <button class="ans-btn b-hard" onclick="rate('hard')"><span>Hard</span><span class="btag">~10 min</span></button>
+    <button class="ans-btn b-easy" onclick="rate('easy')"><span>Easy</span><span class="btag" id="easy-lbl">1 day+</span></button>
+  </div>
+  <div class="study-complete" id="study-complete" style="display:none">
+    <div class="cmp-emoji">🎉</div>
+    <div class="cmp-title">Session Done!</div>
+    <div class="cmp-sub">Great work. Come back tomorrow to keep your streak going.</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num" id="s-again" style="color:var(--again)">0</div><div class="stat-label">Again</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-hard" style="color:var(--hard)">0</div><div class="stat-label">Hard</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-easy" style="color:var(--easy)">0</div><div class="stat-label">Easy</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="exitStudy()" style="width:100%;max-width:280px;margin-top:4px;">← Back</button>
+  </div>
+</div>
+<div id="search-screen" class="screen">
+  <header class="app-header">
+    <button class="btn-back" onclick="showScreen('home-screen')">‹ Back</button>
+    <span style="font-family:Syne;font-weight:700;">Search</span>
+    <div style="width:38px"></div>
+  </header>
+  <div class="scroll-body">
+    <input type="text" class="form-input" id="search-input" placeholder="Search cards, decks, folders…" oninput="doSearch(this.value)" autocomplete="off" style="margin-bottom:14px;">
+    <div id="search-results"></div>
+  </div>
+</div>
+<div id="review-screen" class="screen">
+  <header class="app-header"><span class="app-logo">Review</span></header>
+  <div class="scroll-body fade-up" id="review-content"></div>
+</div>
+<div id="stats-screen" class="screen">
+  <header class="app-header"><span class="app-logo">Stats</span></header>
+  <div class="scroll-body fade-up" id="stats-content"></div>
+</div>
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-lib" onclick="switchTab('home-screen','nav-lib')"><span class="nav-icon">📚</span>Library</button>
+  <button class="nav-item" id="nav-rev" onclick="switchTab('review-screen','nav-rev')"><span class="nav-icon">⚡</span>Review</button>
+  <button class="nav-item" id="nav-stat" onclick="switchTab('stats-screen','nav-stat')"><span class="nav-icon">📊</span>Stats</button>
+</nav>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="folder-modal-overlay" onclick="closeModal('folder-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div><div class="modal-title">New Folder</div>
+    <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="folder-name-input" placeholder="e.g. Biology A-Level" maxlength="50"></div>
+    <div class="form-group"><label class="form-label">Icon</label><div class="emoji-row" id="folder-emoji-row"></div></div>
+    <div class="btn-row" style="margin-top:14px"><button class="btn btn-secondary" onclick="closeModal('folder-modal')">Cancel</button><button class="btn btn-primary" onclick="createFolder()">Create</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="deck-modal-overlay" onclick="closeModal('deck-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div><div class="modal-title">New Deck</div>
+    <div class="form-group"><label class="form-label">Deck Name</label><input type="text" class="form-input" id="deck-name-input" placeholder="e.g. Chapter 3" maxlength="60"></div>
+    <div class="btn-row" style="margin-top:14px"><button class="btn btn-secondary" onclick="closeModal('deck-modal')">Cancel</button><button class="btn btn-primary" onclick="createDeck()">Create</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="add-card-menu-overlay" onclick="closeModal('add-card-menu')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div><div class="modal-title">Add Cards</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <button class="btn btn-secondary" style="text-align:left;display:flex;align-items:center;gap:13px;padding:15px" onclick="closeModal('add-card-menu');openModal('card-modal')">
+        <span style="font-size:22px">✍️</span><div><div style="font-family:Syne;font-weight:700;font-size:14px">Manual</div><div style="font-size:12px;color:var(--text2);margin-top:2px">One card at a time</div></div>
+      </button>
+      <button class="btn btn-secondary" style="text-align:left;display:flex;align-items:center;gap:13px;padding:15px" onclick="closeModal('add-card-menu');openModal('import-modal')">
+        <span style="font-size:22px">📋</span><div><div style="font-family:Syne;font-weight:700;font-size:14px">Bulk Import</div><div style="font-size:12px;color:var(--text2);margin-top:2px">Paste notes, tables, Q|A lines</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="card-modal-overlay" onclick="closeModal('card-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div><div class="modal-title" id="card-modal-title">New Card</div>
+    <div class="form-group"><label class="form-label">Question</label><textarea class="form-input" id="card-q-input" placeholder="Enter your question…" rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Answer</label><textarea class="form-input" id="card-a-input" placeholder="Enter the answer…" rows="3"></textarea></div>
+    <input type="hidden" id="card-edit-id">
+    <div class="btn-row" style="margin-top:6px"><button class="btn btn-secondary" onclick="closeModal('card-modal')">Cancel</button><button class="btn btn-primary" id="card-save-btn" onclick="saveCard()">Save Card</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="import-modal-overlay" onclick="closeModal('import-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div><div class="modal-title">Bulk Import</div>
+    <div class="form-group">
+      <label class="form-label">Format</label>
+      <div class="chip-select" id="import-fmt-chips">
+        <div class="chip selected" data-fmt="smart" onclick="selFmt(this)">🧠 Smart</div>
+        <div class="chip" data-fmt="pipe" onclick="selFmt(this)">Q | A</div>
+        <div class="chip" data-fmt="tab" onclick="selFmt(this)">Tab/Table</div>
+        <div class="chip" data-fmt="notes" onclick="selFmt(this)">Free Notes</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Paste Text</label>
+      <textarea class="form-input" id="import-text" rows="8" placeholder="Paste anything — Q | A lines, Google Docs tables, bullet notes, definitions…" oninput="previewImport()"></textarea>
+    </div>
+    <div class="import-preview" id="import-preview"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-secondary" onclick="closeModal('import-modal')">Cancel</button>
+      <button class="btn btn-primary" id="import-btn" onclick="importCards()">Import</button>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+'use strict';
+let S={folders:[],decks:[],cards:[],streak:0,lastStudy:null,totalReviewed:0};
+let cF=null,cD=null,sQ=[],sIdx=0,sFlipped=false,sStats={again:0,hard:0,easy:0},iFmt='smart',txX=0,txY=0;
+const EMOJIS=['📚','🧪','🔬','🧬','📐','🌍','💡','🎨','📖','🏛️','🔭','💻','🎯','⚗️','🧠','📝','🎓','🏆','🌿','⚡'];
+const DCOLS=['linear-gradient(135deg,#7c6af7,#e879a0)','linear-gradient(135deg,#38d9c0,#4ade9a)','linear-gradient(135deg,#f5a623,#f45c5c)','linear-gradient(135deg,#4dd0e1,#7c6af7)','linear-gradient(135deg,#e879a0,#f5a623)'];
+function save(){try{localStorage.setItem('fm4',JSON.stringify(S));}catch(e){}}
+function load(){try{const r=localStorage.getItem('fm4');if(r)S=JSON.parse(r);}catch(e){}try{if(!S.cards||!S.cards.length){const old=localStorage.getItem('flashmind_v2');if(old){const o=JSON.parse(old);S.folders=o.folders||[];S.decks=o.decks||[];S.cards=o.cards||[];}}}catch(e){}['folders','decks','cards'].forEach(k=>{if(!S[k])S[k]=[];});S.streak=S.streak||0;S.totalReviewed=S.totalReviewed||0;}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));const el=document.getElementById(id);if(el)el.classList.add('active');if(id==='home-screen')renderHome();if(id==='review-screen')renderReview();if(id==='stats-screen')renderStats();}
+function switchTab(sid,nid){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById(nid).classList.add('active');showScreen(sid);}
+function goSearch(){showScreen('search-screen');setTimeout(()=>document.getElementById('search-input').focus(),300);}
+function openModal(n){document.getElementById(n+'-modal-overlay').classList.add('active');if(n==='folder-modal'){setupEmoji();document.getElementById('folder-name-input').value='';setTimeout(()=>document.getElementById('folder-name-input').focus(),360);}if(n==='card-modal'){document.getElementById('card-edit-id').value='';document.getElementById('card-q-input').value='';document.getElementById('card-a-input').value='';document.getElementById('card-modal-title').textContent='New Card';document.getElementById('card-save-btn').textContent='Save Card';setTimeout(()=>document.getElementById('card-q-input').focus(),360);}if(n==='deck-modal'){document.getElementById('deck-name-input').value='';setTimeout(()=>document.getElementById('deck-name-input').focus(),360);}if(n==='import-modal'){document.getElementById('import-text').value='';document.getElementById('import-preview').innerHTML='';document.getElementById('import-btn').textContent='Import';}}
+function closeModal(n){document.getElementById(n+'-modal-overlay').classList.remove('active');}
+function setupEmoji(){const row=document.getElementById('folder-emoji-row');row.innerHTML='';EMOJIS.forEach((e,i)=>{const d=document.createElement('div');d.className='emoji-opt'+(i===0?' selected':'');d.textContent=e;d.onclick=()=>{row.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');};row.appendChild(d);});}
+document.getElementById('folder-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')createFolder();});
+document.getElementById('deck-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')createDeck();});
+function renderHome(){const grid=document.getElementById('folder-grid'),empty=document.getElementById('home-empty'),sub=document.getElementById('home-sub'),banner=document.getElementById('home-due-banner'),streakEl=document.getElementById('home-streak');const fc=S.folders.length;sub.textContent=fc===0?'Create a folder to get started':fc+' folder'+(fc!==1?'s':'')+' · '+S.cards.length+' cards';S.streak>1?streakEl.innerHTML=`<div class="streak-badge">🔥 ${S.streak}-day streak</div>`:streakEl.innerHTML='';const due=getDue();due>0?banner.innerHTML=`<div class="due-banner" onclick="switchTab('review-screen','nav-rev')"><div class="dbi">⚡</div><div class="dbt"><div class="dbt-title">${due} card${due!==1?'s':''} due for review</div><div class="dbt-sub">Tap to start your session</div></div><div class="dba">›</div></div>`:banner.innerHTML='';if(fc===0){grid.innerHTML='';empty.style.display='block';return;}empty.style.display='none';grid.innerHTML='';S.folders.forEach(f=>{const decks=S.decks.filter(d=>d.folderId===f.id);const cards=S.cards.filter(c=>decks.some(d=>d.id===c.deckId));const fd=cards.filter(c=>!c.nextReview||c.nextReview<=Date.now()).length;const el=document.createElement('div');el.className='folder-card';el.innerHTML=`${fd>0?'<div class="folder-due-dot"></div>':''}<span class="folder-emoji">${f.emoji||'📚'}</span><div class="folder-name">${esc(f.name)}</div><div class="folder-meta">${decks.length} deck${decks.length!==1?'s':''} · ${cards.length} card${cards.length!==1?'s':''}</div>`;el.onclick=()=>openFolder(f.id);grid.appendChild(el);});}
+function getDue(){return S.cards.filter(c=>!c.nextReview||c.nextReview<=Date.now()).length;}
+function createFolder(){const name=document.getElementById('folder-name-input').value.trim();if(!name){showToast('Please enter a folder name');return;}const sel=document.querySelector('#folder-emoji-row .emoji-opt.selected');S.folders.push({id:uid(),name,emoji:sel?sel.textContent:'📚',created:Date.now()});save();closeModal('folder-modal');renderHome();showToast('📁 Folder created');}
+function openFolder(fid){cF=fid;const f=S.folders.find(x=>x.id===fid);if(!f)return;document.getElementById('folder-screen-title').textContent=f.emoji+' '+f.name;renderDeckList();showScreen('folder-screen');}
+function renderDeckList(){const list=document.getElementById('deck-list'),empty=document.getElementById('folder-empty');const decks=S.decks.filter(d=>d.folderId===cF);if(!decks.length){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML='';decks.forEach((deck,i)=>{const cards=S.cards.filter(c=>c.deckId===deck.id);const due=cards.filter(c=>!c.nextReview||c.nextReview<=Date.now()).length;const el=document.createElement('div');el.className='deck-item';el.innerHTML=`<div class="deck-icon" style="background:${DCOLS[i%DCOLS.length]}">🃏</div><div class="deck-info"><div class="deck-name">${esc(deck.name)}</div><div class="deck-meta">${cards.length} card${cards.length!==1?'s':''} ${due?'· <span style="color:var(--again)">'+due+' due</span>':''}</div></div>${due?'<span class="due-pill">'+due+'</span>':''}`;el.onclick=()=>openDeck(deck.id);list.appendChild(el);});}
+function createDeck(){const name=document.getElementById('deck-name-input').value.trim();if(!name){showToast('Enter a deck name');return;}S.decks.push({id:uid(),folderId:cF,name,created:Date.now()});save();closeModal('deck-modal');renderDeckList();showToast('🃏 Deck created');}
+function deleteCurrentFolder(){const f=S.folders.find(x=>x.id===cF);if(!confirm(`Delete "${f?f.name:'folder'}" and all its contents?`))return;const dids=S.decks.filter(d=>d.folderId===cF).map(d=>d.id);S.cards=S.cards.filter(c=>!dids.includes(c.deckId));S.decks=S.decks.filter(d=>d.folderId!==cF);S.folders=S.folders.filter(x=>x.id!==cF);save();showScreen('home-screen');showToast('🗑️ Folder deleted');}
+function openDeck(did){cD=did;const deck=S.decks.find(d=>d.id===did);if(!deck)return;const folder=S.folders.find(f=>f.id===deck.folderId);document.getElementById('deck-screen-title').textContent=deck.name;document.getElementById('deck-back-btn').onclick=()=>openFolder(deck.folderId);document.getElementById('deck-bc').innerHTML=`<span class="bc-item" onclick="showScreen('home-screen')">Library</span><span class="bc-sep">›</span><span class="bc-item" onclick="openFolder('${deck.folderId}')">${esc(folder?folder.name:'Folder')}</span><span class="bc-sep">›</span><span style="color:var(--text)">${esc(deck.name)}</span>`;renderCards();showScreen('deck-screen');}
+function renderCards(){const list=document.getElementById('cards-list'),empty=document.getElementById('deck-empty'),cnt=document.getElementById('deck-card-count'),wrap=document.getElementById('deck-study-wrap');const cards=S.cards.filter(c=>c.deckId===cD);cnt.textContent='('+cards.length+')';if(!cards.length){list.innerHTML='';empty.style.display='block';wrap.innerHTML='';return;}empty.style.display='none';const due=cards.filter(c=>!c.nextReview||c.nextReview<=Date.now()).length;wrap.innerHTML=`<button class="btn btn-primary" onclick="startStudy('${cD}')" style="display:flex;align-items:center;justify-content:center;gap:8px;">⚡ Study Now${due?` <span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:12px;font-size:12px;">${due} due</span>`:''}</button>`;list.innerHTML='';const now=Date.now();cards.forEach(c=>{const isN=!c.interval||c.interval===0,isDue=!c.nextReview||c.nextReview<=now;const tag=isN?'<span class="tag tag-new">NEW</span>':isDue?'<span class="tag tag-due">DUE</span>':'<span class="tag tag-ok">LEARNED</span>';const el=document.createElement('div');el.className='card-item';el.innerHTML=`<div class="card-q">Q: ${esc(c.q)}</div><div class="card-div"></div><div class="card-a">A: ${esc(c.a)}</div><div class="card-footer">${tag}<div class="card-actions"><button class="btn-sm btn-edit" onclick="editCard('${c.id}')">Edit</button><button class="btn-sm btn-del" onclick="delCard('${c.id}')">Delete</button></div></div>`;list.appendChild(el);});}
+function openAddCardMenu(){openModal('add-card-menu');}
+function saveCard(){const q=document.getElementById('card-q-input').value.trim(),a=document.getElementById('card-a-input').value.trim(),eid=document.getElementById('card-edit-id').value;if(!q||!a){showToast('Fill in both fields');return;}if(eid){const c=S.cards.find(x=>x.id===eid);if(c){c.q=q;c.a=a;}showToast('✏️ Updated');}else{S.cards.push({id:uid(),deckId:cD,q,a,interval:0,ef:2.5,nextReview:null,reps:0,created:Date.now()});showToast('✅ Card added');}save();closeModal('card-modal');renderCards();}
+function editCard(cid){const c=S.cards.find(x=>x.id===cid);if(!c)return;document.getElementById('card-edit-id').value=cid;document.getElementById('card-q-input').value=c.q;document.getElementById('card-a-input').value=c.a;document.getElementById('card-modal-title').textContent='Edit Card';document.getElementById('card-save-btn').textContent='Update';openModal('card-modal');}
+function delCard(cid){if(!confirm('Delete this card?'))return;S.cards=S.cards.filter(c=>c.id!==cid);save();renderCards();showToast('🗑️ Deleted');}
+function deleteCurrentDeck(){const d=S.decks.find(x=>x.id===cD);if(!confirm(`Delete "${d?d.name:'deck'}" and all cards?`))return;const fid=d?d.folderId:null;S.cards=S.cards.filter(c=>c.deckId!==cD);S.decks=S.decks.filter(x=>x.id!==cD);save();fid?openFolder(fid):showScreen('home-screen');showToast('🗑️ Deck deleted');}
+function parseImport(text,fmt){if(!text.trim())return[];text=text.replace(/[\u200B\u200C\u200D\uFEFF]/g,'').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/\u00A0/g,' ').replace(/\r\n|\r/g,'\n');if(fmt==='pipe')return pPipe(text);if(fmt==='tab')return pTab(text);if(fmt==='notes')return pNotes(text);return pSmart(text);}
+function pSmart(t){const fns=[()=>pPipe(t),()=>pTab(t),()=>pLabeled(t),()=>pNumbered(t),()=>pBold(t),()=>pColon(t),()=>pGDocs(t),()=>pHeading(t)];let best=[];for(const fn of fns){try{const r=fn();if(r.length>best.length){best=r;if(best.length>=3)break;}}catch(e){}}if(!best.length)best=pNotes(t);return dedup(best);}
+function pPipe(t){const p=[];t.split('\n').forEach(l=>{l=l.trim();if(l.length<4)return;const m=l.match(/^(.+?)\s*[|;]\s*(.+)$/);if(m&&m[1].trim()&&m[2].trim())p.push({q:m[1].trim(),a:m[2].trim()});});return p;}
+function pTab(t){const p=[];t.split('\n').forEach(l=>{l=l.trim();if(!l)return;const cells=l.split('\t').map(c=>c.trim()).filter(c=>c);if(cells.length>=2)p.push({q:cells[0],a:cells.slice(1).join(' — ')});});return p;}
+function pLabeled(t){const p=[];const lines=t.split('\n').map(l=>l.trim()).filter(l=>l);let curQ=null;lines.forEach(l=>{const qm=l.match(/^(?:Q(?:uestion)?[\s.:\d]*|Q\s*\d+[.:]\s*)(.+)/i);const am=l.match(/^(?:A(?:nswer)?[\s.:\d]*|A\s*\d+[.:]\s*)(.+)/i);if(qm)curQ=qm[1].trim();else if(am&&curQ){p.push({q:curQ,a:am[1].trim()});curQ=null;}});return p;}
+function pNumbered(t){const p=[];const lines=t.split('\n').map(l=>l.trim()).filter(l=>l);for(let i=0;i<lines.length-1;i++){const qm=lines[i].match(/^\d+[.)]\s+(.+\?)\s*$/);if(qm){const a=lines[i+1].replace(/^[-•*·]\s*/,'').trim();if(a&&!a.match(/^\d+[.)]/)){p.push({q:qm[1].trim(),a});i++;}}}return p;}
+function pBold(t){const p=[];t.split('\n').forEach(l=>{l=l.trim();let m=l.match(/^\*\*(.+?)\*\*\s*[–—:-]\s*(.+)$/);if(m){p.push({q:'What is '+m[1].trim()+'?',a:m[2].trim()});return;}m=l.match(/^([^–—]{3,40})\s*[–—]\s+(.{8,})$/);if(m&&m[1].split(' ').length<=5)p.push({q:'What is '+m[1].trim()+'?',a:m[2].trim()});});return p;}
+function pColon(t){const p=[];t.split('\n').forEach(l=>{l=l.trim();if(l.startsWith('#')||l.startsWith('http'))return;const idx=l.indexOf(':');if(idx<2||idx>50)return;const lft=l.slice(0,idx).trim(),rgt=l.slice(idx+1).trim();if(lft.split(' ').length<=6&&rgt.length>=8&&!/^(note|tip|e\.g|i\.e)/i.test(lft))p.push({q:'What is '+lft+'?',a:rgt});});return p;}
+function pGDocs(t){const p=[];const lines=t.split('\n').map(l=>l.trim()).filter(l=>l.length>1);let i=0;while(i<lines.length-1){const c=lines[i],n=lines[i+1];const cw=c.split(' ').length,nw=n.split(' ').length;if(cw<=8&&nw>4&&nw>cw){p.push({q:c.endsWith('?')?c:c+'?',a:n});i+=2;}else i++;}return p;}
+function pHeading(t){const p=[];const lines=t.split('\n').map(l=>l.trim());for(let i=0;i<lines.length-1;i++){const hm=lines[i].match(/^#{1,3}\s+(.+)/);if(hm){let a='';for(let j=i+1;j<lines.length&&j<i+4;j++){if(!lines[j]||lines[j].startsWith('#'))break;a+=(a?' ':'')+lines[j].replace(/^[-•*]\s*/,'');}if(a.length>10)p.push({q:hm[1].trim()+'?',a});}}return p;}
+function pNotes(t){const p=[];const cpairs=pColon(t);if(cpairs.length)return cpairs;const sents=t.replace(/\n+/g,' ').split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(s=>s.length>20&&s.split(' ').length>=4);sents.forEach(s=>{const dm=s.match(/(.{3,35})\s+(?:is|are|refers to|means|defined as|involves|consists of)\s+(.{5,})/i);if(dm){p.push({q:'What '+dm[1].trim().toLowerCase()+'?',a:dm[2].replace(/\.$/,'')+'.'});return;}const words=s.replace(/[*_]/g,'').split(' ');let kw=null;for(let i=1;i<words.length;i++){const w=words[i].replace(/[^a-zA-Z]/g,'');if(w.length>3&&w[0]===w[0].toUpperCase()&&w[0]!==w[0].toLowerCase()){kw=w;break;}}if(kw){const bl=s.replace(new RegExp('\\b'+kw+'\\b'),'_____');p.push({q:'Complete: '+bl,a:kw});}else{const tr=s.replace(/\.$/,'');p.push({q:'What does this mean? "'+tr.slice(0,80)+(tr.length>80?'…':'')+'"',a:s});}});return p;}
+function dedup(pairs){const seen=new Set();return pairs.filter(p=>{const k=(p.q+p.a).toLowerCase().slice(0,80);if(seen.has(k))return false;seen.add(k);return true;});}
+function selFmt(el){document.querySelectorAll('#import-fmt-chips .chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');iFmt=el.dataset.fmt;previewImport();}
+function previewImport(){const text=document.getElementById('import-text').value,preview=document.getElementById('import-preview'),btn=document.getElementById('import-btn');if(!text.trim()){preview.innerHTML='';btn.textContent='Import';return;}const pairs=parseImport(text,iFmt);btn.textContent=pairs.length?`Import ${pairs.length} Card${pairs.length!==1?'s':''}`:'Import';if(!pairs.length){preview.innerHTML='<div class="imp-warn">⚠️ No cards detected. Try Smart mode or Q | A format.</div>';return;}let html=`<div class="imp-title">Preview <span class="imp-badge">${pairs.length} card${pairs.length!==1?'s':''}</span></div>`;pairs.slice(0,4).forEach(p=>{html+=`<div class="imp-card"><div class="imp-q">Q: ${esc(p.q)}</div><div class="imp-a">A: ${esc(p.a)}</div></div>`;});if(pairs.length>4)html+=`<div style="color:var(--text2);font-size:12px;text-align:center;padding:5px 0">…and ${pairs.length-4} more</div>`;preview.innerHTML=html;}
+function importCards(){const text=document.getElementById('import-text').value,pairs=parseImport(text,iFmt);if(!pairs.length){showToast('No cards detected');return;}pairs.forEach(p=>{S.cards.push({id:uid(),deckId:cD,q:p.q,a:p.a,interval:0,ef:2.5,nextReview:null,reps:0,created:Date.now()});});save();closeModal('import-modal');renderCards();showToast(`✅ Imported ${pairs.length} card${pairs.length!==1?'s':''}`);}
+function startStudy(did){const deck=S.decks.find(d=>d.id===did);if(!deck)return;const cards=S.cards.filter(c=>c.deckId===did);if(!cards.length){showToast('No cards yet');return;}const now=Date.now();const due=cards.filter(c=>!c.nextReview||c.nextReview<=now);const rest=cards.filter(c=>c.nextReview&&c.nextReview>now);sQ=shuf([...due]).concat(shuf([...rest]));sIdx=0;sFlipped=false;sStats={again:0,hard:0,easy:0};document.getElementById('study-deck-lbl').textContent=deck.name;document.getElementById('card-area').style.display='flex';document.getElementById('study-complete').style.display='none';document.getElementById('ans-btns').classList.remove('show');document.getElementById('study-card').classList.remove('flipped');renderStudyCard();showScreen('study-screen');}
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function renderStudyCard(){if(sIdx>=sQ.length){showComplete();return;}const card=sQ[sIdx];document.getElementById('study-q').textContent=card.q;document.getElementById('study-a').textContent=card.a;const sc=document.getElementById('study-card');sc.classList.remove('flipped','swL','swR');document.getElementById('ans-btns').classList.remove('show');sFlipped=false;const pct=Math.round((sIdx/sQ.length)*100);document.getElementById('sph-fill').style.width=pct+'%';document.getElementById('sph-count').textContent=(sIdx+1)+' / '+sQ.length;const DAY=86400000;const nxt=card.interval?Math.round((card.interval*(card.ef||2.5))/DAY)+' day(s)':'1 day';document.getElementById('easy-lbl').textContent=nxt;}
+function flipCard(){if(sFlipped)return;sFlipped=true;document.getElementById('study-card').classList.add('flipped');setTimeout(()=>document.getElementById('ans-btns').classList.add('show'),280);}
+function ts(e){txX=e.touches[0].clientX;txY=e.touches[0].clientY;}
+function te(e){if(!sFlipped){flipCard();return;}const dx=e.changedTouches[0].clientX-txX,dy=e.changedTouches[0].clientY-txY;if(Math.abs(dx)>Math.abs(dy)+20&&Math.abs(dx)>65){dx<0?rate('hard'):rate('easy');}}
+function rate(r){if(!sFlipped)return;const card=sQ[sIdx];sStats[r]++;S.totalReviewed=(S.totalReviewed||0)+1;const now=Date.now(),MIN=60000,DAY=86400000;if(r==='again'){card.interval=0;card.reps=0;card.ef=Math.max(1.3,(card.ef||2.5)-0.2);card.nextReview=now+MIN;sQ.push({...card});}else if(r==='hard'){card.reps=(card.reps||0)+1;card.ef=Math.max(1.3,(card.ef||2.5)-0.15);card.interval=card.reps<=1?10*MIN:Math.max(card.interval*1.2,10*MIN);card.nextReview=now+card.interval;}else{card.reps=(card.reps||0)+1;card.ef=Math.min(2.9,(card.ef||2.5)+0.1);card.interval=card.reps<=1?DAY:card.interval*(card.ef||2.5);card.nextReview=now+card.interval;}upStreak();save();const sc=document.getElementById('study-card');sc.classList.add(r==='easy'?'swR':'swL');setTimeout(()=>{sIdx++;renderStudyCard();},310);}
+function upStreak(){const today=new Date().toDateString();if(S.lastStudy===today)return;const yest=new Date(Date.now()-86400000).toDateString();S.lastStudy===yest?S.streak=(S.streak||0)+1:S.streak=1;S.lastStudy=today;}
+function showComplete(){document.getElementById('card-area').style.display='none';document.getElementById('ans-btns').classList.remove('show');document.getElementById('study-complete').style.display='flex';document.getElementById('s-again').textContent=sStats.again;document.getElementById('s-hard').textContent=sStats.hard;document.getElementById('s-easy').textContent=sStats.easy;document.getElementById('sph-fill').style.width='100%';}
+function exitStudy(){if(cD){renderCards();showScreen('deck-screen');}else{showScreen('home-screen');}}
+function renderReview(){const el=document.getElementById('review-content');const now=Date.now();if(!S.decks.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-title">Nothing here yet</div><div class="empty-sub">Create decks and add cards first</div></div>';return;}const due=S.cards.filter(c=>!c.nextReview||c.nextReview<=now).length;let html=due>0?`<div class="due-banner" onclick="startAllDue()"><div class="dbi">⚡</div><div class="dbt"><div class="dbt-title">Review All Due — ${due} card${due!==1?'s':''}</div><div class="dbt-sub">Mixed from all decks</div></div><div class="dba">›</div></div>`:`<div class="due-banner" style="background:rgba(74,222,154,0.08);border-color:rgba(74,222,154,0.2)"><div class="dbi">✅</div><div class="dbt"><div class="dbt-title" style="color:var(--easy)">All caught up!</div><div class="dbt-sub">Nothing due right now</div></div></div>`;html+=`<div style="font-family:Syne;font-size:16px;font-weight:800;margin:20px 0 12px">All Decks</div><div class="deck-list">`;S.decks.forEach((deck,i)=>{const cards=S.cards.filter(c=>c.deckId===deck.id);const d=cards.filter(c=>!c.nextReview||c.nextReview<=now).length;const folder=S.folders.find(f=>f.id===deck.folderId);html+=`<div class="deck-item" onclick="startStudy('${deck.id}')"><div class="deck-icon" style="background:${DCOLS[i%DCOLS.length]}">🃏</div><div class="deck-info"><div class="deck-name">${esc(deck.name)}</div><div class="deck-meta">${folder?esc(folder.name)+' · ':''} ${cards.length} cards</div></div>${d?'<span class="due-pill">'+d+'</span>':''}</div>`;});html+='</div>';el.innerHTML=html;}
+function startAllDue(){const now=Date.now(),due=S.cards.filter(c=>!c.nextReview||c.nextReview<=now);if(!due.length){showToast('Nothing due!');return;}sQ=shuf([...due]);sIdx=0;sFlipped=false;sStats={again:0,hard:0,easy:0};cD=null;document.getElementById('study-deck-lbl').textContent='All Due';document.getElementById('card-area').style.display='flex';document.getElementById('study-complete').style.display='none';document.getElementById('ans-btns').classList.remove('show');renderStudyCard();showScreen('study-screen');}
+function renderStats(){const now=Date.now(),el=document.getElementById('stats-content');const tot=S.cards.length,due=getDue();const lrn=S.cards.filter(c=>c.nextReview&&c.nextReview>now&&c.interval>0).length;const nw=S.cards.filter(c=>!c.interval||c.interval===0).length;const pct=tot>0?Math.round((lrn/tot)*100):0;const circ=2*Math.PI*42,dash=circ*(pct/100);el.innerHTML=`${S.streak>0?`<div class="streak-badge" style="margin-bottom:20px">🔥 ${S.streak}-day streak</div>`:''}<div class="section-title">Progress</div><div class="section-sub">${S.totalReviewed||0} total reviews</div><div class="prg-ring"><svg width="110" height="110" viewBox="0 0 96 96"><circle cx="48" cy="48" r="42" fill="none" stroke="var(--surface3)" stroke-width="8"/><circle cx="48" cy="48" r="42" fill="none" stroke="url(#pg)" stroke-width="8" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 48 48)"/><defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7c6af7"/><stop offset="100%" stop-color="#38d9c0"/></linearGradient></defs><text x="48" y="44" text-anchor="middle" fill="var(--text)" font-family="Syne" font-weight="800" font-size="20">${pct}%</text><text x="48" y="60" text-anchor="middle" fill="var(--text2)" font-family="DM Sans" font-size="11">learned</text></svg></div><div class="stats-row"><div class="stat-box"><div class="stat-num" style="color:var(--accent)">${tot}</div><div class="stat-label">Total</div></div><div class="stat-box"><div class="stat-num" style="color:var(--easy)">${lrn}</div><div class="stat-label">Learned</div></div><div class="stat-box"><div class="stat-num" style="color:var(--again)">${due}</div><div class="stat-label">Due</div></div><div class="stat-box"><div class="stat-num" style="color:var(--text2)">${nw}</div><div class="stat-label">New</div></div></div><div class="divider"></div><div style="font-family:Syne;font-size:16px;font-weight:800;margin-bottom:12px">By Folder</div><div class="deck-list">${S.folders.map(f=>{const ds=S.decks.filter(d=>d.folderId===f.id);const cs=S.cards.filter(c=>ds.some(d=>d.id===c.deckId));const d2=cs.filter(c=>!c.nextReview||c.nextReview<=now).length;return`<div class="deck-item" onclick="openFolder('${f.id}');switchTab('home-screen','nav-lib')"><div class="deck-icon" style="background:var(--surface3);font-size:20px">${f.emoji}</div><div class="deck-info"><div class="deck-name">${esc(f.name)}</div><div class="deck-meta">${ds.length} decks · ${cs.length} cards</div></div>${d2?'<span class="due-pill">'+d2+'</span>':''}</div>`;}).join('')}</div>${!S.folders.length?'<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No data yet</div></div>':''}`;}
+function doSearch(query){const res=document.getElementById('search-results');if(!query.trim()){res.innerHTML='';return;}const q=query.toLowerCase();const mf=S.folders.filter(f=>f.name.toLowerCase().includes(q));const md=S.decks.filter(d=>d.name.toLowerCase().includes(q));const mc=S.cards.filter(c=>c.q.toLowerCase().includes(q)||c.a.toLowerCase().includes(q));if(!mf.length&&!md.length&&!mc.length){res.innerHTML=`<div style="color:var(--text2);text-align:center;padding:40px 0;font-size:14px">No results for "${esc(query)}"</div>`;return;}let html='';if(mf.length){html+=`<div class="imp-title">Folders</div><div class="deck-list" style="margin-bottom:14px">`;mf.forEach(f=>{html+=`<div class="deck-item" onclick="openFolder('${f.id}')"><div class="deck-icon" style="background:var(--surface3);font-size:20px">${f.emoji}</div><div class="deck-info"><div class="deck-name">${esc(f.name)}</div></div></div>`;});html+='</div>';}if(md.length){html+=`<div class="imp-title">Decks</div><div class="deck-list" style="margin-bottom:14px">`;md.forEach(d=>{html+=`<div class="deck-item" onclick="openDeck('${d.id}')"><div class="deck-icon" style="background:var(--surface2)">🃏</div><div class="deck-info"><div class="deck-name">${esc(d.name)}</div></div></div>`;});html+='</div>';}if(mc.length){html+=`<div class="imp-title">Cards <span class="imp-badge">${mc.length}</span></div>`;mc.slice(0,25).forEach(c=>{html+=`<div class="imp-card"><div class="imp-q">Q: ${esc(c.q)}</div><div class="imp-a">A: ${esc(c.a)}</div></div>`;});if(mc.length>25)html+=`<div style="color:var(--text2);font-size:12px;text-align:center;padding:6px 0">…and ${mc.length-25} more</div>`;}res.innerHTML=html;}
+document.addEventListener('keydown',e=>{if(!document.getElementById('study-screen').classList.contains('active'))return;if(e.code==='Space'||e.key===' '){e.preventDefault();flipCard();return;}if(e.key==='1')rate('again');if(e.key==='2')rate('hard');if(e.key==='3'||e.key==='Enter')rate('easy');});
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+let _tt;function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2600);}
+if('serviceWorker' in navigator){const sw=`const C='fm4';self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});}
+const mf={name:'FlashMind',short_name:'FlashMind',start_url:'.',display:'standalone',background_color:'#0a0a0d',theme_color:'#0a0a0d',icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' fill='%230a0a0d'/%3E%3Ctext y='145' x='18' font-size='145'%3E⚡%3C/text%3E%3C/svg%3E",sizes:'192x192',type:'image/svg+xml'}]};
+const ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));document.head.appendChild(ml);
+load();renderHome();
+</script>
+</body>
+</html>
