@@ -380,7 +380,29 @@ function getDue(){return S.cards.filter(c=>!c.nextReview||c.nextReview<=Date.now
 function createFolder(){const name=document.getElementById('folder-name-input').value.trim();if(!name){showToast('Please enter a folder name');return;}const sel=document.querySelector('#folder-emoji-row .emoji-opt.selected');S.folders.push({id:uid(),name,emoji:sel?sel.textContent:'📚',created:Date.now()});save();closeModal('folder-modal');renderHome();showToast('📁 Folder created');}
 function openFolder(fid){cF=fid;const f=S.folders.find(x=>x.id===fid);if(!f)return;document.getElementById('folder-screen-title').textContent=f.emoji+' '+f.name;renderDeckList();showScreen('folder-screen');}
 function renderDeckList(){const list=document.getElementById('deck-list'),empty=document.getElementById('folder-empty');const decks=S.decks.filter(d=>d.folderId===cF);if(!decks.length){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML='';decks.forEach((deck,i)=>{const cards=S.cards.filter(c=>c.deckId===deck.id);const due=cards.filter(c=>!c.nextReview||c.nextReview<=Date.now()).length;const el=document.createElement('div');el.className='deck-item';el.innerHTML=`<div class="deck-icon" style="background:${DCOLS[i%DCOLS.length]}">🃏</div><div class="deck-info"><div class="deck-name">${esc(deck.name)}</div><div class="deck-meta">${cards.length} card${cards.length!==1?'s':''} ${due?'· <span style="color:var(--again)">'+due+' due</span>':''}</div></div>${due?'<span class="due-pill">'+due+'</span>':''}`;el.onclick=()=>openDeck(deck.id);list.appendChild(el);});}
-function createDeck(){const name=document.getElementById('deck-name-input').value.trim();if(!name){showToast('Enter a deck name');return;}S.decks.push({id:uid(),folderId:cF,name,created:Date.now()});save();closeModal('deck-modal');renderDeckList();showToast('🃏 Deck created');}
+function createDeck() {
+  const name = document.getElementById('deck-name-input').value.trim();
+
+  if (!name) {
+    showToast('Enter a deck name');
+    return;
+  }
+
+  const deck = {
+    id: uid(),
+    name,
+    created: Date.now(),
+    folderId: null
+  };
+
+  S.decks.push(deck);
+
+  save();
+  closeModal('deck-modal');
+  renderDeckList();
+
+  showToast('🃏 Deck created');
+}
 function deleteCurrentFolder(){const f=S.folders.find(x=>x.id===cF);if(!confirm(`Delete "${f?f.name:'folder'}" and all its contents?`))return;const dids=S.decks.filter(d=>d.folderId===cF).map(d=>d.id);S.cards=S.cards.filter(c=>!dids.includes(c.deckId));S.decks=S.decks.filter(d=>d.folderId!==cF);S.folders=S.folders.filter(x=>x.id!==cF);save();showScreen('home-screen');showToast('🗑️ Folder deleted');}
 function openDeck(did){cD=did;const deck=S.decks.find(d=>d.id===did);if(!deck)return;const folder=S.folders.find(f=>f.id===deck.folderId);document.getElementById('deck-screen-title').textContent=deck.name;document.getElementById('deck-back-btn').onclick=()=>openFolder(deck.folderId);document.getElementById('deck-bc').innerHTML=`<span class="bc-item" onclick="showScreen('home-screen')">Library</span><span class="bc-sep">›</span><span class="bc-item" onclick="openFolder('${deck.folderId}')">${esc(folder?folder.name:'Folder')}</span><span class="bc-sep">›</span><span style="color:var(--text)">${esc(deck.name)}</span>`;renderCards();showScreen('deck-screen');}
 function renderCards(){const list=document.getElementById('cards-list'),empty=document.getElementById('deck-empty'),cnt=document.getElementById('deck-card-count'),wrap=document.getElementById('deck-study-wrap');const cards=S.cards.filter(c=>c.deckId===cD);cnt.textContent='('+cards.length+')';if(!cards.length){list.innerHTML='';empty.style.display='block';wrap.innerHTML='';return;}empty.style.display='none';const due=cards.filter(c=>!c.nextReview||c.nextReview<=Date.now()).length;wrap.innerHTML=`<button class="btn btn-primary" onclick="startStudy('${cD}')" style="display:flex;align-items:center;justify-content:center;gap:8px;">⚡ Study Now${due?` <span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:12px;font-size:12px;">${due} due</span>`:''}</button>`;list.innerHTML='';const now=Date.now();cards.forEach(c=>{const isN=!c.interval||c.interval===0,isDue=!c.nextReview||c.nextReview<=now;const tag=isN?'<span class="tag tag-new">NEW</span>':isDue?'<span class="tag tag-due">DUE</span>':'<span class="tag tag-ok">LEARNED</span>';const el=document.createElement('div');el.className='card-item';el.innerHTML=`<div class="card-q">Q: ${esc(c.q)}</div><div class="card-div"></div><div class="card-a">A: ${esc(c.a)}</div><div class="card-footer">${tag}<div class="card-actions"><button class="btn-sm btn-edit" onclick="editCard('${c.id}')">Edit</button><button class="btn-sm btn-del" onclick="delCard('${c.id}')">Delete</button></div></div>`;list.appendChild(el);});}
